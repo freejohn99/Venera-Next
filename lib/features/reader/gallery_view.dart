@@ -694,24 +694,32 @@ class _GalleryPhotoPage extends StatefulWidget {
 }
 
 class _GalleryPhotoPageState extends State<_GalleryPhotoPage> {
-  int _visit = 0;
+  PhotoViewController? _controller;
+
   @override
   void didUpdateWidget(covariant _GalleryPhotoPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.active && widget.active) _visit++;
+    // Re-entering a page starts a new zoom session. Reset the existing
+    // controller instead of recreating the subtree: rebuilding discarded the
+    // decoded frame and re-resolved the image provider, which showed the
+    // loading placeholder on every page turn.
+    if (!oldWidget.active && widget.active) {
+      _controller?.reset();
+    }
   }
 
   @override
   Widget build(BuildContext context) => _GalleryPhotoOwner(
-    key: ValueKey(_visit),
-    onController: widget.onController,
+    onController: (controller, attached) {
+      _controller = attached ? controller : null;
+      widget.onController(controller, attached);
+    },
     builder: widget.builder,
   );
 }
 
 class _GalleryPhotoOwner extends StatefulWidget {
   const _GalleryPhotoOwner({
-    super.key,
     required this.onController,
     required this.builder,
   });
